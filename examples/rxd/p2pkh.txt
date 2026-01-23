@@ -1,0 +1,56 @@
+# Pay-to-Public-Key-Hash (P2PKH) Example
+# 
+# This is the most common script pattern in Radiant (and Bitcoin).
+# The locking script (scriptPubKey) locks funds to a public key hash.
+# The unlocking script (scriptSig) provides a signature and public key.
+#
+# Usage:
+#   rxdeb --script-file=examples/rxd/p2pkh.txt
+#
+# For real transaction debugging:
+#   rxdeb --tx=<spending_tx_hex> --txin=<input_tx_hex>
+
+# ============================================
+# scriptPubKey (locking script) pattern:
+# OP_DUP OP_HASH160 <pubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
+# ============================================
+
+# For demonstration, we'll use a mock execution
+# In real debugging, rxdeb extracts these from the transaction
+
+# The stack starts with [<sig> <pubkey>] from scriptSig
+# We'll simulate with placeholder values
+
+# Push mock signature (71 bytes typical)
+0x304402200000000000000000000000000000000000000000000000000000000000000001022000000000000000000000000000000000000000000000000000000000000000014101
+
+# Push mock public key (33 bytes compressed)
+0x0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+
+# Now execute P2PKH script:
+OP_DUP           # Duplicate pubkey
+OP_HASH160       # Hash160 the pubkey
+
+# Push expected pubkey hash (20 bytes)
+0x751e76e8199196d454941c45d1b3a323f1433bd6
+
+OP_EQUALVERIFY   # Verify hashes match
+# OP_CHECKSIG    # Verify signature (requires tx context)
+
+# For this demo, we end with OP_TRUE since we don't have real sig
+OP_DROP          # Drop the signature
+OP_TRUE          # Success!
+
+# ============================================
+# Expected execution trace:
+#
+# #0000 <sig>           stack: [<sig>]
+# #0001 <pubkey>        stack: [<sig>, <pubkey>]
+# #0002 OP_DUP          stack: [<sig>, <pubkey>, <pubkey>]
+# #0003 OP_HASH160      stack: [<sig>, <pubkey>, <pkh>]
+# #0004 <expected_pkh>  stack: [<sig>, <pubkey>, <pkh>, <expected_pkh>]
+# #0005 OP_EQUALVERIFY  stack: [<sig>, <pubkey>] (verified)
+# #0006 OP_DROP         stack: [<sig>]
+# #0007 OP_DROP         stack: []
+# #0008 OP_TRUE         stack: [0x01]
+# ============================================

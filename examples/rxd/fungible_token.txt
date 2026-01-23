@@ -1,0 +1,121 @@
+# Fungible Token Contract Example
+#
+# This demonstrates a basic fungible token using Radiant's reference system.
+# The token uses OP_PUSHINPUTREF to track token identity across transactions.
+#
+# Usage:
+#   rxdeb --script-file=examples/rxd/fungible_token.txt \
+#         --tx=<spending_tx_hex> --txin=<input_tx_hex>
+#
+# Or with RadiantScript artifact:
+#   rxdeb --artifact=FungibleToken.json --function=transfer
+
+# ============================================
+# Token Contract Structure:
+#
+# scriptPubKey = [P2PKH] | OP_STATESEPARATOR | [Token Logic]
+#
+# The state separator divides:
+# - State script (before): Owner PKH, balances, etc.
+# - Code script (after): Token validation logic
+# ============================================
+
+# --- Begin P2PKH Section (owner authorization) ---
+
+# Stack starts with: [<sig> <pubkey>]
+
+# Mock signature
+0x3044022000000000000000000000000000000000000000000000000000000000000000010220000000000000000000000000000000000000000000000000000000000000000141
+
+# Mock pubkey  
+0x0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+
+OP_DUP
+OP_HASH160
+
+# Expected PKH (owner's pubkey hash)
+0x751e76e8199196d454941c45d1b3a323f1433bd6
+
+OP_EQUALVERIFY
+
+# Skip checksig for demo
+OP_DROP
+
+# --- State Separator ---
+OP_STATESEPARATOR
+
+# --- Begin Token Logic Section ---
+
+# Push the token reference (36 bytes: txid + vout)
+# This is the "genesis" outpoint that defines this token
+0x0000000000000000000000000000000000000000000000000000000000000001 # txid
+0x00000000  # vout (index 0)
+OP_CAT  # Combine into 36-byte reference
+
+OP_PUSHINPUTREF
+
+# Now the reference is tracked. We need to verify:
+# 1. Input token amounts = Output token amounts
+# 2. All outputs with this ref have valid code script
+
+# Get hash of our code script
+OP_INPUTINDEX
+OP_CODESCRIPTBYTECODE_UTXO
+OP_HASH256
+
+# Check that token isn't being burned
+# (output count for this code script hash >= 1)
+OP_DUP
+OP_CODESCRIPTHASHOUTPUTCOUNT_OUTPUTS
+OP_0
+OP_GREATERTHAN
+OP_VERIFY
+
+# Check value conservation:
+# Sum of inputs with this code script = Sum of outputs with this code script
+
+# Get input value sum for this code script hash
+OP_DUP
+OP_CODESCRIPTHASHVALUESUM_UTXOS
+
+# Get output value sum for this code script hash
+OP_2
+OP_PICK
+OP_CODESCRIPTHASHVALUESUM_OUTPUTS
+
+# Values must be equal (no inflation/deflation)
+OP_NUMEQUAL
+OP_VERIFY
+
+# Clean up
+OP_DROP
+
+# ============================================
+# Success - Token transfer is valid!
+# ============================================
+
+OP_TRUE
+
+# ============================================
+# Notes:
+#
+# In a real token contract compiled by RadiantScript:
+# - The reference would be a contract parameter
+# - The PKH would be updateable state
+# - Multiple functions (transfer, mint, burn) would be supported
+#
+# Example RadiantScript:
+#
+# contract FungibleToken(bytes36 REF, bytes20 PKH)
+# function(sig s, pubkey pk) {
+#     require(hash160(pk) == PKH);
+#     require(checkSig(s, pk));
+#     
+#     stateSeparator;
+#     
+#     bytes36 ref = pushInputRef(REF);
+#     bytes32 csh = hash256(tx.inputs[this.activeInputIndex].codeScript);
+#     require(tx.outputs.codeScriptCount(csh) == tx.outputs.refOutputCount(ref));
+#     require(tx.inputs.codeScriptValueSum(csh) == tx.outputs.codeScriptValueSum(csh));
+# }
+# ============================================

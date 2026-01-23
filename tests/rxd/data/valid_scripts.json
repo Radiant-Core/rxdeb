@@ -1,0 +1,197 @@
+[
+  {
+    "description": "OP_TRUE returns true",
+    "script_asm": "OP_TRUE",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "Basic arithmetic: 1 + 2 = 3",
+    "script_asm": "OP_1 OP_2 OP_ADD OP_3 OP_NUMEQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "64-bit arithmetic: large addition",
+    "script_asm": "0x00e1f50500000000 0x00e1f50500000000 OP_ADD 0x00c2eb0b00000000 OP_NUMEQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"],
+    "flags": ["SCRIPT_64_BIT_INTEGERS"],
+    "comment": "100000000 + 100000000 = 200000000 (in little-endian)"
+  },
+  {
+    "description": "OP_CAT concatenation",
+    "script_asm": "0x0102 0x0304 OP_CAT 0x01020304 OP_EQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_SPLIT splits correctly",
+    "script_asm": "0x01020304 OP_2 OP_SPLIT 0x0304 OP_EQUALVERIFY 0x0102 OP_EQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_MUL multiplication",
+    "script_asm": "OP_7 OP_6 OP_MUL 0x2a OP_NUMEQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"],
+    "comment": "7 * 6 = 42"
+  },
+  {
+    "description": "OP_DIV division",
+    "script_asm": "0x2a OP_7 OP_DIV OP_6 OP_NUMEQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"],
+    "comment": "42 / 7 = 6"
+  },
+  {
+    "description": "OP_MOD modulo",
+    "script_asm": "0x2b OP_7 OP_MOD OP_1 OP_NUMEQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"],
+    "comment": "43 % 7 = 1"
+  },
+  {
+    "description": "OP_AND bitwise",
+    "script_asm": "0x0f 0x03 OP_AND 0x03 OP_EQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_OR bitwise",
+    "script_asm": "0x0c 0x03 OP_OR 0x0f OP_EQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_XOR bitwise",
+    "script_asm": "0x0f 0x03 OP_XOR 0x0c OP_EQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_NUM2BIN conversion",
+    "script_asm": "OP_16 OP_4 OP_NUM2BIN 0x10000000 OP_EQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_BIN2NUM conversion",
+    "script_asm": "0x10000000 OP_BIN2NUM OP_16 OP_NUMEQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_SIZE returns correct length",
+    "script_asm": "0x01020304 OP_SIZE OP_4 OP_NUMEQUAL OP_NIP",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_REVERSEBYTES",
+    "script_asm": "0x01020304 OP_REVERSEBYTES 0x04030201 OP_EQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_IF/OP_ELSE/OP_ENDIF - true branch",
+    "script_asm": "OP_1 OP_IF OP_2 OP_ELSE OP_3 OP_ENDIF OP_2 OP_NUMEQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_IF/OP_ELSE/OP_ENDIF - false branch",
+    "script_asm": "OP_0 OP_IF OP_2 OP_ELSE OP_3 OP_ENDIF OP_3 OP_NUMEQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_CHECKLOCKTIMEVERIFY basic",
+    "script_asm": "OP_1 OP_CHECKLOCKTIMEVERIFY OP_DROP OP_TRUE",
+    "expected_result": true,
+    "expected_final_stack": ["01"],
+    "tx_locktime": 2,
+    "input_sequence": 0
+  },
+  {
+    "description": "OP_SHA256",
+    "script_asm": "0x00 OP_SHA256 0x6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d OP_EQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"],
+    "comment": "SHA256 of empty byte"
+  },
+  {
+    "description": "OP_HASH160",
+    "script_asm": "0x00 OP_HASH160 0x9f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68 OP_EQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_HASH256 (double SHA256)",
+    "script_asm": "0x00 OP_HASH256 0x1406e05881e299367766d313e26c05564ec91bf721d31726bd6e46e60689539a OP_EQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "Stack manipulation: DUP",
+    "script_asm": "OP_5 OP_DUP OP_ADD OP_10 OP_NUMEQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "Stack manipulation: SWAP",
+    "script_asm": "OP_1 OP_2 OP_SWAP OP_1 OP_NUMEQUAL OP_NIP",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "Stack manipulation: ROT",
+    "script_asm": "OP_1 OP_2 OP_3 OP_ROT OP_1 OP_NUMEQUAL OP_2DROP",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_PICK",
+    "script_asm": "OP_1 OP_2 OP_3 OP_2 OP_PICK OP_1 OP_NUMEQUAL OP_2DROP OP_2DROP",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "Comparison: LESSTHAN",
+    "script_asm": "OP_5 OP_10 OP_LESSTHAN",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "Comparison: GREATERTHAN",
+    "script_asm": "OP_10 OP_5 OP_GREATERTHAN",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "OP_WITHIN range check",
+    "script_asm": "OP_5 OP_3 OP_7 OP_WITHIN",
+    "expected_result": true,
+    "expected_final_stack": ["01"],
+    "comment": "5 is within [3, 7)"
+  },
+  {
+    "description": "Boolean: BOOLAND",
+    "script_asm": "OP_1 OP_1 OP_BOOLAND",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "Boolean: BOOLOR",
+    "script_asm": "OP_0 OP_1 OP_BOOLOR",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  },
+  {
+    "description": "Altstack operations",
+    "script_asm": "OP_5 OP_TOALTSTACK OP_FROMALTSTACK OP_5 OP_NUMEQUAL",
+    "expected_result": true,
+    "expected_final_stack": ["01"]
+  }
+]

@@ -1,0 +1,89 @@
+# 64-bit Arithmetic Example
+#
+# Radiant supports 64-bit signed integers, unlike Bitcoin's 32-bit limit.
+# This enables operations with values up to ~9.2 quintillion.
+#
+# Usage:
+#   rxdeb --script-file=examples/rxd/arithmetic.txt
+
+# ============================================
+# Basic 64-bit Addition
+# ============================================
+
+# Push 5 billion (exceeds 32-bit signed max of ~2.1 billion)
+0x00f2052a01000000
+
+# Push another 5 billion
+0x00f2052a01000000
+
+# Add them
+OP_ADD
+
+# Result should be 10 billion
+# Verify: push 10 billion and compare
+0x00e40b5402000000
+OP_NUMEQUAL
+
+# Should leave 0x01 (true) on stack
+
+# ============================================
+# Multiplication Example
+# ============================================
+
+# Push 1 million
+0x40420f0000000000
+
+# Push 1000
+0xe803000000000000
+
+# Multiply
+OP_MUL
+
+# Result should be 1 billion
+0x00ca9a3b00000000
+OP_NUMEQUAL
+
+# Verify with AND
+OP_BOOLAND
+
+# ============================================
+# Division and Modulo
+# ============================================
+
+# Push 1 billion
+0x00ca9a3b00000000
+
+# Push 7
+OP_7
+
+# Divide
+OP_DIV
+
+# Result: 142857142
+0x9686cd0800000000
+OP_NUMEQUAL
+
+OP_BOOLAND
+
+# ============================================
+# Negative Numbers
+# ============================================
+
+# Push -100
+0x6480
+
+# Push 50
+0x32
+
+# Add (should be -50)
+OP_ADD
+
+# Push -50 and compare
+0x3280
+OP_NUMEQUAL
+
+OP_BOOLAND
+
+# ============================================
+# Final result should be true (0x01)
+# ============================================

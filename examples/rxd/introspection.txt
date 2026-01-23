@@ -1,0 +1,117 @@
+# Native Introspection Example
+#
+# Radiant's native introspection opcodes allow scripts to examine
+# the transaction being validated, including inputs and outputs.
+#
+# Usage (requires transaction context):
+#   rxdeb --script-file=examples/rxd/introspection.txt \
+#         --tx=<spending_tx_hex> --txin=<input_tx_hex>
+#
+# Or with Electrum:
+#   rxdeb --script-file=examples/rxd/introspection.txt \
+#         --electrum=electrum.radiant.ovh:50002 --txid=<txid>
+
+# ============================================
+# Basic Transaction Info
+# ============================================
+
+# Get current input index (should be 0 for first input)
+OP_INPUTINDEX
+OP_0
+OP_NUMEQUAL
+OP_VERIFY
+
+# Get transaction version (typically 2)
+OP_TXVERSION
+OP_2
+OP_NUMEQUAL
+OP_VERIFY
+
+# Get number of inputs
+OP_TXINPUTCOUNT
+OP_1
+OP_GREATERTHANOREQUAL
+OP_VERIFY
+
+# Get number of outputs
+OP_TXOUTPUTCOUNT
+OP_1
+OP_GREATERTHANOREQUAL
+OP_VERIFY
+
+# ============================================
+# Input Introspection
+# ============================================
+
+# Get value of UTXO being spent (input 0)
+OP_0
+OP_UTXOVALUE
+# Value is now on stack (in photons)
+
+# Verify it's greater than 0
+OP_0
+OP_GREATERTHAN
+OP_VERIFY
+
+# Get outpoint txid of input 0
+OP_0
+OP_OUTPOINTTXHASH
+# 32-byte txid is now on stack
+OP_SIZE
+0x20  # 32 bytes
+OP_NUMEQUAL
+OP_VERIFY
+
+# Get sequence number of input 0
+OP_0
+OP_INPUTSEQUENCENUMBER
+# Sequence number on stack (typically 0xffffffff)
+OP_DROP
+
+# ============================================
+# Output Introspection
+# ============================================
+
+# Get value of output 0
+OP_0
+OP_OUTPUTVALUE
+# Output value in photons
+
+# Verify it's greater than 0
+OP_0
+OP_GREATERTHAN
+OP_VERIFY
+
+# Get scriptPubKey of output 0
+OP_0
+OP_OUTPUTBYTECODE
+# Script bytes on stack
+OP_SIZE
+OP_0
+OP_GREATERTHAN
+OP_VERIFY
+
+# ============================================
+# Enforce Output Constraints
+# ============================================
+
+# Example: Require output 0 has at least 1000 photons
+OP_0
+OP_OUTPUTVALUE
+0xe803  # 1000 in little-endian
+OP_GREATERTHANOREQUAL
+OP_VERIFY
+
+# ============================================
+# Get locktime
+# ============================================
+
+OP_TXLOCKTIME
+# Locktime on stack
+OP_DROP
+
+# ============================================
+# Success
+# ============================================
+
+OP_TRUE

@@ -1,0 +1,496 @@
+// Copyright (c) 2024-2026 The Radiant Developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#include "rxd_script.h"
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
+
+namespace rxd {
+
+const char* GetOpName(opcodetype opcode) {
+    switch (opcode) {
+        // Push value
+        case OP_0: return "OP_0";
+        case OP_PUSHDATA1: return "OP_PUSHDATA1";
+        case OP_PUSHDATA2: return "OP_PUSHDATA2";
+        case OP_PUSHDATA4: return "OP_PUSHDATA4";
+        case OP_1NEGATE: return "OP_1NEGATE";
+        case OP_RESERVED: return "OP_RESERVED";
+        case OP_1: return "OP_1";
+        case OP_2: return "OP_2";
+        case OP_3: return "OP_3";
+        case OP_4: return "OP_4";
+        case OP_5: return "OP_5";
+        case OP_6: return "OP_6";
+        case OP_7: return "OP_7";
+        case OP_8: return "OP_8";
+        case OP_9: return "OP_9";
+        case OP_10: return "OP_10";
+        case OP_11: return "OP_11";
+        case OP_12: return "OP_12";
+        case OP_13: return "OP_13";
+        case OP_14: return "OP_14";
+        case OP_15: return "OP_15";
+        case OP_16: return "OP_16";
+
+        // Control
+        case OP_NOP: return "OP_NOP";
+        case OP_VER: return "OP_VER";
+        case OP_IF: return "OP_IF";
+        case OP_NOTIF: return "OP_NOTIF";
+        case OP_VERIF: return "OP_VERIF";
+        case OP_VERNOTIF: return "OP_VERNOTIF";
+        case OP_ELSE: return "OP_ELSE";
+        case OP_ENDIF: return "OP_ENDIF";
+        case OP_VERIFY: return "OP_VERIFY";
+        case OP_RETURN: return "OP_RETURN";
+
+        // Stack operations
+        case OP_TOALTSTACK: return "OP_TOALTSTACK";
+        case OP_FROMALTSTACK: return "OP_FROMALTSTACK";
+        case OP_2DROP: return "OP_2DROP";
+        case OP_2DUP: return "OP_2DUP";
+        case OP_3DUP: return "OP_3DUP";
+        case OP_2OVER: return "OP_2OVER";
+        case OP_2ROT: return "OP_2ROT";
+        case OP_2SWAP: return "OP_2SWAP";
+        case OP_IFDUP: return "OP_IFDUP";
+        case OP_DEPTH: return "OP_DEPTH";
+        case OP_DROP: return "OP_DROP";
+        case OP_DUP: return "OP_DUP";
+        case OP_NIP: return "OP_NIP";
+        case OP_OVER: return "OP_OVER";
+        case OP_PICK: return "OP_PICK";
+        case OP_ROLL: return "OP_ROLL";
+        case OP_ROT: return "OP_ROT";
+        case OP_SWAP: return "OP_SWAP";
+        case OP_TUCK: return "OP_TUCK";
+
+        // Splice operations (re-enabled in Radiant)
+        case OP_CAT: return "OP_CAT";
+        case OP_SPLIT: return "OP_SPLIT";
+        case OP_NUM2BIN: return "OP_NUM2BIN";
+        case OP_BIN2NUM: return "OP_BIN2NUM";
+        case OP_SIZE: return "OP_SIZE";
+
+        // Bit logic
+        case OP_INVERT: return "OP_INVERT";
+        case OP_AND: return "OP_AND";
+        case OP_OR: return "OP_OR";
+        case OP_XOR: return "OP_XOR";
+        case OP_EQUAL: return "OP_EQUAL";
+        case OP_EQUALVERIFY: return "OP_EQUALVERIFY";
+        case OP_RESERVED1: return "OP_RESERVED1";
+        case OP_RESERVED2: return "OP_RESERVED2";
+
+        // Numeric
+        case OP_1ADD: return "OP_1ADD";
+        case OP_1SUB: return "OP_1SUB";
+        case OP_2MUL: return "OP_2MUL";
+        case OP_2DIV: return "OP_2DIV";
+        case OP_NEGATE: return "OP_NEGATE";
+        case OP_ABS: return "OP_ABS";
+        case OP_NOT: return "OP_NOT";
+        case OP_0NOTEQUAL: return "OP_0NOTEQUAL";
+        case OP_ADD: return "OP_ADD";
+        case OP_SUB: return "OP_SUB";
+        case OP_MUL: return "OP_MUL";
+        case OP_DIV: return "OP_DIV";
+        case OP_MOD: return "OP_MOD";
+        case OP_LSHIFT: return "OP_LSHIFT";
+        case OP_RSHIFT: return "OP_RSHIFT";
+        case OP_BOOLAND: return "OP_BOOLAND";
+        case OP_BOOLOR: return "OP_BOOLOR";
+        case OP_NUMEQUAL: return "OP_NUMEQUAL";
+        case OP_NUMEQUALVERIFY: return "OP_NUMEQUALVERIFY";
+        case OP_NUMNOTEQUAL: return "OP_NUMNOTEQUAL";
+        case OP_LESSTHAN: return "OP_LESSTHAN";
+        case OP_GREATERTHAN: return "OP_GREATERTHAN";
+        case OP_LESSTHANOREQUAL: return "OP_LESSTHANOREQUAL";
+        case OP_GREATERTHANOREQUAL: return "OP_GREATERTHANOREQUAL";
+        case OP_MIN: return "OP_MIN";
+        case OP_MAX: return "OP_MAX";
+        case OP_WITHIN: return "OP_WITHIN";
+
+        // Crypto
+        case OP_RIPEMD160: return "OP_RIPEMD160";
+        case OP_SHA1: return "OP_SHA1";
+        case OP_SHA256: return "OP_SHA256";
+        case OP_HASH160: return "OP_HASH160";
+        case OP_HASH256: return "OP_HASH256";
+        case OP_CODESEPARATOR: return "OP_CODESEPARATOR";
+        case OP_CHECKSIG: return "OP_CHECKSIG";
+        case OP_CHECKSIGVERIFY: return "OP_CHECKSIGVERIFY";
+        case OP_CHECKMULTISIG: return "OP_CHECKMULTISIG";
+        case OP_CHECKMULTISIGVERIFY: return "OP_CHECKMULTISIGVERIFY";
+
+        // Expansion
+        case OP_NOP1: return "OP_NOP1";
+        case OP_CHECKLOCKTIMEVERIFY: return "OP_CHECKLOCKTIMEVERIFY";
+        case OP_CHECKSEQUENCEVERIFY: return "OP_CHECKSEQUENCEVERIFY";
+        case OP_NOP4: return "OP_NOP4";
+        case OP_NOP5: return "OP_NOP5";
+        case OP_NOP6: return "OP_NOP6";
+        case OP_NOP7: return "OP_NOP7";
+        case OP_NOP8: return "OP_NOP8";
+        case OP_NOP9: return "OP_NOP9";
+        case OP_NOP10: return "OP_NOP10";
+
+        // BCH-derived
+        case OP_CHECKDATASIG: return "OP_CHECKDATASIG";
+        case OP_CHECKDATASIGVERIFY: return "OP_CHECKDATASIGVERIFY";
+        case OP_REVERSEBYTES: return "OP_REVERSEBYTES";
+
+        // Radiant: State separator
+        case OP_STATESEPARATOR: return "OP_STATESEPARATOR";
+        case OP_STATESEPARATORINDEX_UTXO: return "OP_STATESEPARATORINDEX_UTXO";
+        case OP_STATESEPARATORINDEX_OUTPUT: return "OP_STATESEPARATORINDEX_OUTPUT";
+
+        // Radiant: Native introspection
+        case OP_INPUTINDEX: return "OP_INPUTINDEX";
+        case OP_ACTIVEBYTECODE: return "OP_ACTIVEBYTECODE";
+        case OP_TXVERSION: return "OP_TXVERSION";
+        case OP_TXINPUTCOUNT: return "OP_TXINPUTCOUNT";
+        case OP_TXOUTPUTCOUNT: return "OP_TXOUTPUTCOUNT";
+        case OP_TXLOCKTIME: return "OP_TXLOCKTIME";
+        case OP_UTXOVALUE: return "OP_UTXOVALUE";
+        case OP_UTXOBYTECODE: return "OP_UTXOBYTECODE";
+        case OP_OUTPOINTTXHASH: return "OP_OUTPOINTTXHASH";
+        case OP_OUTPOINTINDEX: return "OP_OUTPOINTINDEX";
+        case OP_INPUTBYTECODE: return "OP_INPUTBYTECODE";
+        case OP_INPUTSEQUENCENUMBER: return "OP_INPUTSEQUENCENUMBER";
+        case OP_OUTPUTVALUE: return "OP_OUTPUTVALUE";
+        case OP_OUTPUTBYTECODE: return "OP_OUTPUTBYTECODE";
+
+        // Radiant: SHA512/256
+        case OP_SHA512_256: return "OP_SHA512_256";
+        case OP_HASH512_256: return "OP_HASH512_256";
+
+        // Radiant: Reference opcodes
+        case OP_PUSHINPUTREF: return "OP_PUSHINPUTREF";
+        case OP_REQUIREINPUTREF: return "OP_REQUIREINPUTREF";
+        case OP_DISALLOWPUSHINPUTREF: return "OP_DISALLOWPUSHINPUTREF";
+        case OP_DISALLOWPUSHINPUTREFSIBLING: return "OP_DISALLOWPUSHINPUTREFSIBLING";
+        case OP_REFHASHDATASUMMARY_UTXO: return "OP_REFHASHDATASUMMARY_UTXO";
+        case OP_REFHASHVALUESUM_UTXOS: return "OP_REFHASHVALUESUM_UTXOS";
+        case OP_REFHASHDATASUMMARY_OUTPUT: return "OP_REFHASHDATASUMMARY_OUTPUT";
+        case OP_REFHASHVALUESUM_OUTPUTS: return "OP_REFHASHVALUESUM_OUTPUTS";
+        case OP_PUSHINPUTREFSINGLETON: return "OP_PUSHINPUTREFSINGLETON";
+        case OP_REFTYPE_UTXO: return "OP_REFTYPE_UTXO";
+        case OP_REFTYPE_OUTPUT: return "OP_REFTYPE_OUTPUT";
+        case OP_REFVALUESUM_UTXOS: return "OP_REFVALUESUM_UTXOS";
+        case OP_REFVALUESUM_OUTPUTS: return "OP_REFVALUESUM_OUTPUTS";
+        case OP_REFOUTPUTCOUNT_UTXOS: return "OP_REFOUTPUTCOUNT_UTXOS";
+        case OP_REFOUTPUTCOUNT_OUTPUTS: return "OP_REFOUTPUTCOUNT_OUTPUTS";
+        case OP_REFOUTPUTCOUNTZEROVALUED_UTXOS: return "OP_REFOUTPUTCOUNTZEROVALUED_UTXOS";
+        case OP_REFOUTPUTCOUNTZEROVALUED_OUTPUTS: return "OP_REFOUTPUTCOUNTZEROVALUED_OUTPUTS";
+        case OP_REFDATASUMMARY_UTXO: return "OP_REFDATASUMMARY_UTXO";
+        case OP_REFDATASUMMARY_OUTPUT: return "OP_REFDATASUMMARY_OUTPUT";
+        case OP_CODESCRIPTHASHVALUESUM_UTXOS: return "OP_CODESCRIPTHASHVALUESUM_UTXOS";
+        case OP_CODESCRIPTHASHVALUESUM_OUTPUTS: return "OP_CODESCRIPTHASHVALUESUM_OUTPUTS";
+        case OP_CODESCRIPTHASHOUTPUTCOUNT_UTXOS: return "OP_CODESCRIPTHASHOUTPUTCOUNT_UTXOS";
+        case OP_CODESCRIPTHASHOUTPUTCOUNT_OUTPUTS: return "OP_CODESCRIPTHASHOUTPUTCOUNT_OUTPUTS";
+        case OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_UTXOS: return "OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_UTXOS";
+        case OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_OUTPUTS: return "OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_OUTPUTS";
+        case OP_CODESCRIPTBYTECODE_UTXO: return "OP_CODESCRIPTBYTECODE_UTXO";
+        case OP_CODESCRIPTBYTECODE_OUTPUT: return "OP_CODESCRIPTBYTECODE_OUTPUT";
+        case OP_STATESCRIPTBYTECODE_UTXO: return "OP_STATESCRIPTBYTECODE_UTXO";
+        case OP_STATESCRIPTBYTECODE_OUTPUT: return "OP_STATESCRIPTBYTECODE_OUTPUT";
+        case OP_PUSH_TX_STATE: return "OP_PUSH_TX_STATE";
+
+        case INVALIDOPCODE: return "INVALIDOPCODE";
+        
+        default:
+            return "UNKNOWN_OPCODE";
+    }
+}
+
+bool IsRadiantOpcode(opcodetype opcode) {
+    return (opcode >= OP_STATESEPARATOR && opcode <= OP_PUSH_TX_STATE) ||
+           opcode == OP_CHECKDATASIG ||
+           opcode == OP_CHECKDATASIGVERIFY ||
+           opcode == OP_REVERSEBYTES;
+}
+
+bool IsIntrospectionOpcode(opcodetype opcode) {
+    return opcode >= OP_INPUTINDEX && opcode <= OP_OUTPUTBYTECODE;
+}
+
+bool IsReferenceOpcode(opcodetype opcode) {
+    return opcode >= OP_PUSHINPUTREF && opcode <= OP_PUSH_TX_STATE;
+}
+
+bool IsStateSeparatorOpcode(opcodetype opcode) {
+    return opcode >= OP_STATESEPARATOR && opcode <= OP_STATESEPARATORINDEX_OUTPUT;
+}
+
+bool IsPushOpcode(opcodetype opcode) {
+    return opcode <= OP_PUSHDATA4;
+}
+
+bool IsReenabledOpcode(opcodetype opcode) {
+    switch (opcode) {
+        case OP_CAT:
+        case OP_SPLIT:
+        case OP_AND:
+        case OP_OR:
+        case OP_XOR:
+        case OP_DIV:
+        case OP_MOD:
+        case OP_MUL:
+        case OP_NUM2BIN:
+        case OP_BIN2NUM:
+        case OP_INVERT:
+        case OP_2MUL:
+        case OP_2DIV:
+        case OP_LSHIFT:
+        case OP_RSHIFT:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool ParseOpcode(const std::string& str, opcodetype& opcode) {
+    // Map of opcode names to values
+    static const struct {
+        const char* name;
+        opcodetype opcode;
+    } opcode_map[] = {
+        {"OP_0", OP_0}, {"OP_FALSE", OP_FALSE},
+        {"OP_PUSHDATA1", OP_PUSHDATA1}, {"OP_PUSHDATA2", OP_PUSHDATA2}, {"OP_PUSHDATA4", OP_PUSHDATA4},
+        {"OP_1NEGATE", OP_1NEGATE},
+        {"OP_1", OP_1}, {"OP_TRUE", OP_TRUE},
+        {"OP_2", OP_2}, {"OP_3", OP_3}, {"OP_4", OP_4}, {"OP_5", OP_5},
+        {"OP_6", OP_6}, {"OP_7", OP_7}, {"OP_8", OP_8}, {"OP_9", OP_9},
+        {"OP_10", OP_10}, {"OP_11", OP_11}, {"OP_12", OP_12}, {"OP_13", OP_13},
+        {"OP_14", OP_14}, {"OP_15", OP_15}, {"OP_16", OP_16},
+        {"OP_NOP", OP_NOP}, {"OP_IF", OP_IF}, {"OP_NOTIF", OP_NOTIF},
+        {"OP_ELSE", OP_ELSE}, {"OP_ENDIF", OP_ENDIF}, {"OP_VERIFY", OP_VERIFY},
+        {"OP_RETURN", OP_RETURN},
+        {"OP_TOALTSTACK", OP_TOALTSTACK}, {"OP_FROMALTSTACK", OP_FROMALTSTACK},
+        {"OP_2DROP", OP_2DROP}, {"OP_2DUP", OP_2DUP}, {"OP_3DUP", OP_3DUP},
+        {"OP_2OVER", OP_2OVER}, {"OP_2ROT", OP_2ROT}, {"OP_2SWAP", OP_2SWAP},
+        {"OP_IFDUP", OP_IFDUP}, {"OP_DEPTH", OP_DEPTH}, {"OP_DROP", OP_DROP},
+        {"OP_DUP", OP_DUP}, {"OP_NIP", OP_NIP}, {"OP_OVER", OP_OVER},
+        {"OP_PICK", OP_PICK}, {"OP_ROLL", OP_ROLL}, {"OP_ROT", OP_ROT},
+        {"OP_SWAP", OP_SWAP}, {"OP_TUCK", OP_TUCK},
+        {"OP_CAT", OP_CAT}, {"OP_SPLIT", OP_SPLIT},
+        {"OP_NUM2BIN", OP_NUM2BIN}, {"OP_BIN2NUM", OP_BIN2NUM}, {"OP_SIZE", OP_SIZE},
+        {"OP_INVERT", OP_INVERT}, {"OP_AND", OP_AND}, {"OP_OR", OP_OR}, {"OP_XOR", OP_XOR},
+        {"OP_EQUAL", OP_EQUAL}, {"OP_EQUALVERIFY", OP_EQUALVERIFY},
+        {"OP_1ADD", OP_1ADD}, {"OP_1SUB", OP_1SUB},
+        {"OP_2MUL", OP_2MUL}, {"OP_2DIV", OP_2DIV},
+        {"OP_NEGATE", OP_NEGATE}, {"OP_ABS", OP_ABS}, {"OP_NOT", OP_NOT},
+        {"OP_0NOTEQUAL", OP_0NOTEQUAL},
+        {"OP_ADD", OP_ADD}, {"OP_SUB", OP_SUB}, {"OP_MUL", OP_MUL},
+        {"OP_DIV", OP_DIV}, {"OP_MOD", OP_MOD},
+        {"OP_LSHIFT", OP_LSHIFT}, {"OP_RSHIFT", OP_RSHIFT},
+        {"OP_BOOLAND", OP_BOOLAND}, {"OP_BOOLOR", OP_BOOLOR},
+        {"OP_NUMEQUAL", OP_NUMEQUAL}, {"OP_NUMEQUALVERIFY", OP_NUMEQUALVERIFY},
+        {"OP_NUMNOTEQUAL", OP_NUMNOTEQUAL},
+        {"OP_LESSTHAN", OP_LESSTHAN}, {"OP_GREATERTHAN", OP_GREATERTHAN},
+        {"OP_LESSTHANOREQUAL", OP_LESSTHANOREQUAL}, {"OP_GREATERTHANOREQUAL", OP_GREATERTHANOREQUAL},
+        {"OP_MIN", OP_MIN}, {"OP_MAX", OP_MAX}, {"OP_WITHIN", OP_WITHIN},
+        {"OP_RIPEMD160", OP_RIPEMD160}, {"OP_SHA1", OP_SHA1}, {"OP_SHA256", OP_SHA256},
+        {"OP_HASH160", OP_HASH160}, {"OP_HASH256", OP_HASH256},
+        {"OP_CODESEPARATOR", OP_CODESEPARATOR},
+        {"OP_CHECKSIG", OP_CHECKSIG}, {"OP_CHECKSIGVERIFY", OP_CHECKSIGVERIFY},
+        {"OP_CHECKMULTISIG", OP_CHECKMULTISIG}, {"OP_CHECKMULTISIGVERIFY", OP_CHECKMULTISIGVERIFY},
+        {"OP_CHECKLOCKTIMEVERIFY", OP_CHECKLOCKTIMEVERIFY}, {"OP_CLTV", OP_CHECKLOCKTIMEVERIFY},
+        {"OP_CHECKSEQUENCEVERIFY", OP_CHECKSEQUENCEVERIFY}, {"OP_CSV", OP_CHECKSEQUENCEVERIFY},
+        {"OP_CHECKDATASIG", OP_CHECKDATASIG}, {"OP_CHECKDATASIGVERIFY", OP_CHECKDATASIGVERIFY},
+        {"OP_REVERSEBYTES", OP_REVERSEBYTES},
+        {"OP_STATESEPARATOR", OP_STATESEPARATOR},
+        {"OP_STATESEPARATORINDEX_UTXO", OP_STATESEPARATORINDEX_UTXO},
+        {"OP_STATESEPARATORINDEX_OUTPUT", OP_STATESEPARATORINDEX_OUTPUT},
+        {"OP_INPUTINDEX", OP_INPUTINDEX}, {"OP_ACTIVEBYTECODE", OP_ACTIVEBYTECODE},
+        {"OP_TXVERSION", OP_TXVERSION}, {"OP_TXINPUTCOUNT", OP_TXINPUTCOUNT},
+        {"OP_TXOUTPUTCOUNT", OP_TXOUTPUTCOUNT}, {"OP_TXLOCKTIME", OP_TXLOCKTIME},
+        {"OP_UTXOVALUE", OP_UTXOVALUE}, {"OP_UTXOBYTECODE", OP_UTXOBYTECODE},
+        {"OP_OUTPOINTTXHASH", OP_OUTPOINTTXHASH}, {"OP_OUTPOINTINDEX", OP_OUTPOINTINDEX},
+        {"OP_INPUTBYTECODE", OP_INPUTBYTECODE}, {"OP_INPUTSEQUENCENUMBER", OP_INPUTSEQUENCENUMBER},
+        {"OP_OUTPUTVALUE", OP_OUTPUTVALUE}, {"OP_OUTPUTBYTECODE", OP_OUTPUTBYTECODE},
+        {"OP_SHA512_256", OP_SHA512_256}, {"OP_HASH512_256", OP_HASH512_256},
+        {"OP_PUSHINPUTREF", OP_PUSHINPUTREF}, {"OP_REQUIREINPUTREF", OP_REQUIREINPUTREF},
+        {"OP_DISALLOWPUSHINPUTREF", OP_DISALLOWPUSHINPUTREF},
+        {"OP_DISALLOWPUSHINPUTREFSIBLING", OP_DISALLOWPUSHINPUTREFSIBLING},
+        {"OP_PUSHINPUTREFSINGLETON", OP_PUSHINPUTREFSINGLETON},
+        {"OP_REFVALUESUM_UTXOS", OP_REFVALUESUM_UTXOS},
+        {"OP_REFVALUESUM_OUTPUTS", OP_REFVALUESUM_OUTPUTS},
+        {"OP_REFOUTPUTCOUNT_UTXOS", OP_REFOUTPUTCOUNT_UTXOS},
+        {"OP_REFOUTPUTCOUNT_OUTPUTS", OP_REFOUTPUTCOUNT_OUTPUTS},
+        {"OP_CODESCRIPTHASHVALUESUM_UTXOS", OP_CODESCRIPTHASHVALUESUM_UTXOS},
+        {"OP_CODESCRIPTHASHVALUESUM_OUTPUTS", OP_CODESCRIPTHASHVALUESUM_OUTPUTS},
+        {"OP_CODESCRIPTHASHOUTPUTCOUNT_UTXOS", OP_CODESCRIPTHASHOUTPUTCOUNT_UTXOS},
+        {"OP_CODESCRIPTHASHOUTPUTCOUNT_OUTPUTS", OP_CODESCRIPTHASHOUTPUTCOUNT_OUTPUTS},
+        {"OP_CODESCRIPTBYTECODE_UTXO", OP_CODESCRIPTBYTECODE_UTXO},
+        {"OP_CODESCRIPTBYTECODE_OUTPUT", OP_CODESCRIPTBYTECODE_OUTPUT},
+        {"OP_STATESCRIPTBYTECODE_UTXO", OP_STATESCRIPTBYTECODE_UTXO},
+        {"OP_STATESCRIPTBYTECODE_OUTPUT", OP_STATESCRIPTBYTECODE_OUTPUT},
+        {"OP_PUSH_TX_STATE", OP_PUSH_TX_STATE},
+        {nullptr, INVALIDOPCODE}
+    };
+    
+    for (size_t i = 0; opcode_map[i].name != nullptr; i++) {
+        if (str == opcode_map[i].name) {
+            opcode = opcode_map[i].opcode;
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// CRxdScript implementation
+
+bool CRxdScript::GetOp(const_iterator& pc, opcodetype& opcode, valtype& data) const {
+    data.clear();
+    if (pc >= end()) return false;
+    
+    opcode = static_cast<opcodetype>(*pc++);
+    
+    if (opcode <= OP_PUSHDATA4) {
+        unsigned int nSize = 0;
+        if (opcode < OP_PUSHDATA1) {
+            nSize = opcode;
+        } else if (opcode == OP_PUSHDATA1) {
+            if (end() - pc < 1) return false;
+            nSize = *pc++;
+        } else if (opcode == OP_PUSHDATA2) {
+            if (end() - pc < 2) return false;
+            nSize = *pc++;
+            nSize |= (*pc++) << 8;
+        } else if (opcode == OP_PUSHDATA4) {
+            if (end() - pc < 4) return false;
+            nSize = *pc++;
+            nSize |= (*pc++) << 8;
+            nSize |= (*pc++) << 16;
+            nSize |= (*pc++) << 24;
+        }
+        if (end() - pc < 0 || static_cast<unsigned int>(end() - pc) < nSize)
+            return false;
+        data.assign(pc, pc + nSize);
+        pc += nSize;
+    }
+    
+    return true;
+}
+
+bool CRxdScript::GetOp(const_iterator& pc, opcodetype& opcode) const {
+    valtype dummy;
+    return GetOp(pc, opcode, dummy);
+}
+
+bool CRxdScript::HasStateSeparator() const {
+    const_iterator pc = begin();
+    opcodetype opcode;
+    while (GetOp(pc, opcode)) {
+        if (opcode == OP_STATESEPARATOR) return true;
+    }
+    return false;
+}
+
+uint32_t CRxdScript::GetStateSeparatorIndex() const {
+    const_iterator pc = begin();
+    opcodetype opcode;
+    uint32_t idx = 0;
+    while (GetOp(pc, opcode)) {
+        if (opcode == OP_STATESEPARATOR) return idx;
+        idx++;
+    }
+    return 0xFFFFFFFF;  // Not found
+}
+
+std::string CRxdScript::ToHex() const {
+    std::ostringstream ss;
+    ss << std::hex << std::setfill('0');
+    for (uint8_t byte : script_) {
+        ss << std::setw(2) << static_cast<int>(byte);
+    }
+    return ss.str();
+}
+
+std::string CRxdScript::ToAsm() const {
+    std::string result;
+    const_iterator pc = begin();
+    opcodetype opcode;
+    valtype data;
+    
+    while (GetOp(pc, opcode, data)) {
+        if (!result.empty()) result += " ";
+        
+        if (data.size() > 0) {
+            // Push data
+            std::ostringstream ss;
+            ss << std::hex << std::setfill('0');
+            for (uint8_t byte : data) {
+                ss << std::setw(2) << static_cast<int>(byte);
+            }
+            result += ss.str();
+        } else {
+            result += GetOpName(opcode);
+        }
+    }
+    
+    return result;
+}
+
+CRxdScript& CRxdScript::operator<<(opcodetype opcode) {
+    script_.push_back(static_cast<uint8_t>(opcode));
+    return *this;
+}
+
+CRxdScript& CRxdScript::operator<<(const valtype& data) {
+    if (data.size() < OP_PUSHDATA1) {
+        script_.push_back(static_cast<uint8_t>(data.size()));
+    } else if (data.size() <= 0xff) {
+        script_.push_back(OP_PUSHDATA1);
+        script_.push_back(static_cast<uint8_t>(data.size()));
+    } else if (data.size() <= 0xffff) {
+        script_.push_back(OP_PUSHDATA2);
+        script_.push_back(data.size() & 0xff);
+        script_.push_back((data.size() >> 8) & 0xff);
+    } else {
+        script_.push_back(OP_PUSHDATA4);
+        script_.push_back(data.size() & 0xff);
+        script_.push_back((data.size() >> 8) & 0xff);
+        script_.push_back((data.size() >> 16) & 0xff);
+        script_.push_back((data.size() >> 24) & 0xff);
+    }
+    script_.insert(script_.end(), data.begin(), data.end());
+    return *this;
+}
+
+bool CRxdScript::IsPayToScriptHash() const {
+    return script_.size() == 23 &&
+           script_[0] == OP_HASH160 &&
+           script_[1] == 0x14 &&
+           script_[22] == OP_EQUAL;
+}
+
+bool CRxdScript::IsPayToPubKeyHash() const {
+    return script_.size() == 25 &&
+           script_[0] == OP_DUP &&
+           script_[1] == OP_HASH160 &&
+           script_[2] == 0x14 &&
+           script_[23] == OP_EQUALVERIFY &&
+           script_[24] == OP_CHECKSIG;
+}
+
+bool CRxdScript::IsPushOnly() const {
+    const_iterator pc = begin();
+    opcodetype opcode;
+    while (GetOp(pc, opcode)) {
+        if (opcode > OP_16) return false;
+    }
+    return true;
+}
+
+bool CRxdScript::IsUnspendable() const {
+    return script_.size() > 0 && script_[0] == OP_RETURN;
+}
+
+} // namespace rxd

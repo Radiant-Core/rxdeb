@@ -1,0 +1,24 @@
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+.deps/
+.libs/
+autom4te.cache/
+config.log
+config.status
+Makefile
+aclocal.m4
+configure
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
