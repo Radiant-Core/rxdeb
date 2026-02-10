@@ -47,6 +47,8 @@ set(CORE_SOURCES
     functions.cpp
     instance.cpp
     merklebranch.cpp
+    crypto/blake3.cpp
+    crypto/k12.cpp
     crypto/sha256.cpp
     crypto/sha512.cpp
     crypto/ripemd160.cpp

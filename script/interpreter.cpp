@@ -5,6 +5,8 @@
 
 #include <script/interpreter.h>
 
+#include <crypto/blake3.h>
+#include <crypto/k12.h>
 #include <crypto/ripemd160.h>
 #include <crypto/sha1.h>
 #include <crypto/sha256.h>
@@ -463,9 +465,7 @@ bool StepScript(ScriptExecutionEnvironment& env, CScript::const_iterator& pc, CS
                 opcode == OP_2DIV ||
                 opcode == OP_MUL ||
                 opcode == OP_DIV ||
-                opcode == OP_MOD ||
-                opcode == OP_LSHIFT ||
-                opcode == OP_RSHIFT))
+                opcode == OP_MOD))
                 return set_error(serror, SCRIPT_ERR_DISABLED_OPCODE); // Disabled opcodes (CVE-2010-5137).
 
             // With SCRIPT_VERIFY_CONST_SCRIPTCODE, OP_CODESEPARATOR in non-segwit script is rejected even in an unexecuted branch
@@ -1040,6 +1040,8 @@ bool StepScript(ScriptExecutionEnvironment& env, CScript::const_iterator& pc, CS
                 case OP_SHA256:
                 case OP_HASH160:
                 case OP_HASH256:
+                case OP_BLAKE3:
+                case OP_K12:
                 {
                     // (in -- hash)
                     if (stack.size() < 1)
@@ -1056,6 +1058,10 @@ bool StepScript(ScriptExecutionEnvironment& env, CScript::const_iterator& pc, CS
                         CHash160().Write(vch).Finalize(vchHash);
                     else if (opcode == OP_HASH256)
                         CHash256().Write(vch).Finalize(vchHash);
+                    else if (opcode == OP_BLAKE3)
+                        CBlake3().Write(vch.data(), vch.size()).Finalize(vchHash.data());
+                    else if (opcode == OP_K12)
+                        CK12().Write(vch.data(), vch.size()).Finalize(vchHash.data());
                     popstack(stack);
                     pushstack(stack, vchHash);
                 }
