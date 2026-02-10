@@ -216,6 +216,10 @@ enum opcodetype : uint8_t {
     OP_STATESCRIPTBYTECODE_OUTPUT = 0xec,
     OP_PUSH_TX_STATE = 0xed,
 
+    // Glyph v2 dMint hash opcodes (Hard Fork V2)
+    OP_BLAKE3 = 0xee,
+    OP_K12 = 0xef,
+
     // Invalid
     INVALIDOPCODE = 0xff,
 };

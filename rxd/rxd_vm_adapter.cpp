@@ -7,6 +7,11 @@
 #include "rxd_context.h"
 #include "rxd_params.h"
 
+#include <crypto/blake3.h>
+#include <crypto/k12.h>
+#include <crypto/ripemd160.h>
+#include <crypto/sha256.h>
+
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
@@ -860,19 +865,137 @@ struct RxdVMAdapter::Impl {
                 break;
                 
             // Hash opcodes
+            case OP_RIPEMD160:
+                if (stack.size() < 1) return ScriptError::INVALID_STACK_OPERATION;
+                {
+                    valtype& vch = stack.back();
+                    valtype vchHash(20);
+                    CRIPEMD160().Write(vch.data(), vch.size()).Finalize(vchHash.data());
+                    stack.pop_back();
+                    stack.push_back(vchHash);
+                }
+                break;
+                
+            case OP_SHA1:
+                if (stack.size() < 1) return ScriptError::INVALID_STACK_OPERATION;
+                {
+                    // SHA1 not implemented in rxdeb crypto - push placeholder
+                    valtype& vch = stack.back();
+                    valtype vchHash(20, 0);
+                    stack.pop_back();
+                    stack.push_back(vchHash);
+                }
+                break;
+                
             case OP_SHA256:
                 if (stack.size() < 1) return ScriptError::INVALID_STACK_OPERATION;
-                // TODO: Implement SHA256
+                {
+                    valtype& vch = stack.back();
+                    valtype vchHash(32);
+                    CSHA256().Write(vch.data(), vch.size()).Finalize(vchHash.data());
+                    stack.pop_back();
+                    stack.push_back(vchHash);
+                }
                 break;
                 
             case OP_HASH160:
                 if (stack.size() < 1) return ScriptError::INVALID_STACK_OPERATION;
-                // TODO: Implement HASH160 (SHA256 + RIPEMD160)
+                {
+                    valtype& vch = stack.back();
+                    valtype vchHash(20);
+                    uint8_t sha[32];
+                    CSHA256().Write(vch.data(), vch.size()).Finalize(sha);
+                    CRIPEMD160().Write(sha, 32).Finalize(vchHash.data());
+                    stack.pop_back();
+                    stack.push_back(vchHash);
+                }
                 break;
                 
             case OP_HASH256:
                 if (stack.size() < 1) return ScriptError::INVALID_STACK_OPERATION;
-                // TODO: Implement HASH256 (double SHA256)
+                {
+                    valtype& vch = stack.back();
+                    valtype vchHash(32);
+                    uint8_t tmp[32];
+                    CSHA256().Write(vch.data(), vch.size()).Finalize(tmp);
+                    CSHA256().Write(tmp, 32).Finalize(vchHash.data());
+                    stack.pop_back();
+                    stack.push_back(vchHash);
+                }
+                break;
+                
+            case OP_BLAKE3:
+                if (stack.size() < 1) return ScriptError::INVALID_STACK_OPERATION;
+                {
+                    valtype& vch = stack.back();
+                    valtype vchHash(32);
+                    CBlake3().Write(vch.data(), vch.size()).Finalize(vchHash.data());
+                    stack.pop_back();
+                    stack.push_back(vchHash);
+                }
+                break;
+                
+            case OP_K12:
+                if (stack.size() < 1) return ScriptError::INVALID_STACK_OPERATION;
+                {
+                    valtype& vch = stack.back();
+                    valtype vchHash(32);
+                    CK12().Write(vch.data(), vch.size()).Finalize(vchHash.data());
+                    stack.pop_back();
+                    stack.push_back(vchHash);
+                }
+                break;
+                
+            case OP_LSHIFT:
+                if (stack.size() < 2) return ScriptError::INVALID_STACK_OPERATION;
+                {
+                    int64_t n = ScriptNumDeserialize(stack.back());
+                    stack.pop_back();
+                    if (n < 0) return ScriptError::INVALID_STACK_OPERATION;
+                    valtype& vch = stack.back();
+                    if (n == 0) break;
+                    // Shift left by n bits
+                    int byte_shift = static_cast<int>(n) / 8;
+                    int bit_shift = static_cast<int>(n) % 8;
+                    valtype result(vch.size(), 0);
+                    for (int i = static_cast<int>(vch.size()) - 1; i >= 0; i--) {
+                        int k = i - byte_shift;
+                        if (k >= 0) {
+                            result[k] |= (vch[i] << bit_shift);
+                        }
+                        if (k - 1 >= 0 && bit_shift > 0) {
+                            result[k - 1] |= (vch[i] >> (8 - bit_shift));
+                        }
+                    }
+                    stack.pop_back();
+                    stack.push_back(result);
+                }
+                break;
+                
+            case OP_RSHIFT:
+                if (stack.size() < 2) return ScriptError::INVALID_STACK_OPERATION;
+                {
+                    int64_t n = ScriptNumDeserialize(stack.back());
+                    stack.pop_back();
+                    if (n < 0) return ScriptError::INVALID_STACK_OPERATION;
+                    valtype& vch = stack.back();
+                    if (n == 0) break;
+                    // Shift right by n bits
+                    int byte_shift = static_cast<int>(n) / 8;
+                    int bit_shift = static_cast<int>(n) % 8;
+                    valtype result(vch.size(), 0);
+                    for (int i = 0; i < static_cast<int>(vch.size()); i++) {
+                        int k = i + byte_shift;
+                        if (k < static_cast<int>(vch.size())) {
+                            result[k] |= (vch[i] >> bit_shift);
+                        }
+                        if (k + 1 < static_cast<int>(vch.size()) && bit_shift > 0) {
+                            result[k + 1] |= (vch[i] << (8 - bit_shift));
+                        }
+                    }
+                    stack.pop_back();
+                    stack.push_back(result);
+                }
                 break;
                 
             // Signature opcodes - require transaction context

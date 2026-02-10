@@ -200,6 +200,10 @@ const char* GetOpName(opcodetype opcode) {
         case OP_STATESCRIPTBYTECODE_OUTPUT: return "OP_STATESCRIPTBYTECODE_OUTPUT";
         case OP_PUSH_TX_STATE: return "OP_PUSH_TX_STATE";
 
+        // Glyph v2 dMint hash opcodes
+        case OP_BLAKE3: return "OP_BLAKE3";
+        case OP_K12: return "OP_K12";
+
         case INVALIDOPCODE: return "INVALIDOPCODE";
         
         default:
@@ -208,7 +212,7 @@ const char* GetOpName(opcodetype opcode) {
 }
 
 bool IsRadiantOpcode(opcodetype opcode) {
-    return (opcode >= OP_STATESEPARATOR && opcode <= OP_PUSH_TX_STATE) ||
+    return (opcode >= OP_STATESEPARATOR && opcode <= OP_K12) ||
            opcode == OP_CHECKDATASIG ||
            opcode == OP_CHECKDATASIGVERIFY ||
            opcode == OP_REVERSEBYTES;
@@ -331,6 +335,8 @@ bool ParseOpcode(const std::string& str, opcodetype& opcode) {
         {"OP_STATESCRIPTBYTECODE_UTXO", OP_STATESCRIPTBYTECODE_UTXO},
         {"OP_STATESCRIPTBYTECODE_OUTPUT", OP_STATESCRIPTBYTECODE_OUTPUT},
         {"OP_PUSH_TX_STATE", OP_PUSH_TX_STATE},
+        {"OP_BLAKE3", OP_BLAKE3},
+        {"OP_K12", OP_K12},
         {nullptr, INVALIDOPCODE}
     };
     
