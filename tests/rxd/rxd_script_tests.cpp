@@ -27,11 +27,20 @@ TEST_CASE("Opcode names are correct", "[rxd][script]") {
         REQUIRE(std::string(GetOpName(OP_SHA512_256)) == "OP_SHA512_256");
     }
     
+    SECTION("V2 hard fork opcodes") {
+        REQUIRE(std::string(GetOpName(OP_BLAKE3)) == "OP_BLAKE3");
+        REQUIRE(std::string(GetOpName(OP_K12)) == "OP_K12");
+        REQUIRE(static_cast<uint8_t>(OP_BLAKE3) == 0xee);
+        REQUIRE(static_cast<uint8_t>(OP_K12) == 0xef);
+    }
+    
     SECTION("Re-enabled opcodes") {
         REQUIRE(std::string(GetOpName(OP_CAT)) == "OP_CAT");
         REQUIRE(std::string(GetOpName(OP_SPLIT)) == "OP_SPLIT");
         REQUIRE(std::string(GetOpName(OP_MUL)) == "OP_MUL");
         REQUIRE(std::string(GetOpName(OP_DIV)) == "OP_DIV");
+        REQUIRE(std::string(GetOpName(OP_LSHIFT)) == "OP_LSHIFT");
+        REQUIRE(std::string(GetOpName(OP_RSHIFT)) == "OP_RSHIFT");
     }
 }
 
@@ -40,6 +49,8 @@ TEST_CASE("Opcode classification", "[rxd][script]") {
         REQUIRE(IsRadiantOpcode(OP_STATESEPARATOR) == true);
         REQUIRE(IsRadiantOpcode(OP_INPUTINDEX) == true);
         REQUIRE(IsRadiantOpcode(OP_PUSHINPUTREF) == true);
+        REQUIRE(IsRadiantOpcode(OP_BLAKE3) == true);
+        REQUIRE(IsRadiantOpcode(OP_K12) == true);
         REQUIRE(IsRadiantOpcode(OP_DUP) == false);
         REQUIRE(IsRadiantOpcode(OP_ADD) == false);
     }
@@ -64,6 +75,8 @@ TEST_CASE("Opcode classification", "[rxd][script]") {
         REQUIRE(IsReenabledOpcode(OP_SPLIT) == true);
         REQUIRE(IsReenabledOpcode(OP_MUL) == true);
         REQUIRE(IsReenabledOpcode(OP_DIV) == true);
+        REQUIRE(IsReenabledOpcode(OP_LSHIFT) == true);
+        REQUIRE(IsReenabledOpcode(OP_RSHIFT) == true);
         REQUIRE(IsReenabledOpcode(OP_ADD) == false);
     }
 }
@@ -91,6 +104,15 @@ TEST_CASE("Opcode parsing", "[rxd][script]") {
         
         REQUIRE(ParseOpcode("OP_PUSHINPUTREF", op) == true);
         REQUIRE(op == OP_PUSHINPUTREF);
+    }
+    
+    SECTION("Parse V2 hard fork opcodes") {
+        opcodetype op;
+        REQUIRE(ParseOpcode("OP_BLAKE3", op) == true);
+        REQUIRE(op == OP_BLAKE3);
+        
+        REQUIRE(ParseOpcode("OP_K12", op) == true);
+        REQUIRE(op == OP_K12);
     }
     
     SECTION("Invalid opcode") {

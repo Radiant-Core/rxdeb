@@ -381,6 +381,147 @@ TEST_CASE("VM stepping", "[rxd][vm]") {
     }
 }
 
+TEST_CASE("V2 hard fork hash opcodes", "[rxd][vm][v2]") {
+    SECTION("OP_BLAKE3 on empty input") {
+        // Push empty bytes, apply OP_BLAKE3, check output is 32 bytes
+        // BLAKE3("") = af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
+        std::vector<uint8_t> bytes = {OP_0, OP_BLAKE3, OP_SIZE};
+        CRxdScript script(bytes);
+        // Push 32 (0x20) and check NUMEQUAL
+        script << std::vector<uint8_t>{0x20};
+        script << OP_NUMEQUAL;
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_K12 on empty input") {
+        // Push empty bytes, apply OP_K12, check output is 32 bytes
+        // K12("") = 1ac2d450fc3b4205d19da7bfca1b37513c0803577ac7167f06fe2ce1f0ef39e5
+        std::vector<uint8_t> bytes = {OP_0, OP_K12, OP_SIZE};
+        CRxdScript script(bytes);
+        script << std::vector<uint8_t>{0x20};
+        script << OP_NUMEQUAL;
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_BLAKE3 deterministic") {
+        // Hash the same data twice, results must be equal
+        std::vector<uint8_t> bytes = {
+            0x03, 0x61, 0x62, 0x63,  // push "abc"
+            OP_DUP,
+            OP_BLAKE3,
+            OP_SWAP,
+            OP_BLAKE3,
+            OP_EQUAL
+        };
+        CRxdScript script(bytes);
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_K12 deterministic") {
+        // Hash the same data twice, results must be equal
+        std::vector<uint8_t> bytes = {
+            0x03, 0x61, 0x62, 0x63,  // push "abc"
+            OP_DUP,
+            OP_K12,
+            OP_SWAP,
+            OP_K12,
+            OP_EQUAL
+        };
+        CRxdScript script(bytes);
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_BLAKE3 and OP_K12 produce different outputs") {
+        // Same input, different hash functions -> different outputs
+        std::vector<uint8_t> bytes = {
+            0x03, 0x61, 0x62, 0x63,  // push "abc"
+            OP_DUP,
+            OP_BLAKE3,
+            OP_SWAP,
+            OP_K12,
+            OP_EQUAL,
+            OP_NOT  // They should NOT be equal
+        };
+        CRxdScript script(bytes);
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_BLAKE3 stack underflow") {
+        CRxdScript script = BuildScript({OP_BLAKE3});
+        REQUIRE(RunScript(script, false));
+    }
+    
+    SECTION("OP_K12 stack underflow") {
+        CRxdScript script = BuildScript({OP_K12});
+        REQUIRE(RunScript(script, false));
+    }
+}
+
+TEST_CASE("V2 hard fork shift opcodes", "[rxd][vm][v2]") {
+    SECTION("OP_LSHIFT by 0 bits") {
+        // 1 << 0 = 1
+        CRxdScript script = BuildScript({OP_1, OP_0, OP_LSHIFT});
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_RSHIFT by 0 bits") {
+        // 1 >> 0 = 1
+        CRxdScript script = BuildScript({OP_1, OP_0, OP_RSHIFT});
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_LSHIFT basic") {
+        // Push byte 0x01, shift left by 3 bits -> 0x08
+        std::vector<uint8_t> bytes = {
+            0x01, 0x01,  // push [0x01]
+            OP_3,        // push 3
+            OP_LSHIFT,   // [0x01] << 3 = [0x08]
+            0x01, 0x08,  // push [0x08]
+            OP_EQUAL
+        };
+        CRxdScript script(bytes);
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_RSHIFT basic") {
+        // Push byte 0x10 (16), shift right by 2 bits -> 0x04
+        std::vector<uint8_t> bytes = {
+            0x01, 0x10,  // push [0x10]
+            OP_2,        // push 2
+            OP_RSHIFT,   // [0x10] >> 2 = [0x04]
+            0x01, 0x04,  // push [0x04]
+            OP_EQUAL
+        };
+        CRxdScript script(bytes);
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_LSHIFT cross-byte boundary") {
+        // Push [0x01, 0x00], shift left by 8 bits -> [0x00, 0x00] (shifted out)
+        // Actually: [0x01] << 8 = [0x00] (only 1 byte)
+        // Let's use 2-byte: [0x00, 0x01] << 4 = [0x00, 0x10]
+        std::vector<uint8_t> bytes = {
+            0x02, 0x00, 0x01,  // push [0x00, 0x01]
+            OP_4,              // push 4
+            OP_LSHIFT,         // shift left 4 bits
+            0x02, 0x00, 0x10,  // push [0x00, 0x10]
+            OP_EQUAL
+        };
+        CRxdScript script(bytes);
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_LSHIFT stack underflow") {
+        CRxdScript script = BuildScript({OP_1, OP_LSHIFT});
+        REQUIRE(RunScript(script, false));
+    }
+    
+    SECTION("OP_RSHIFT stack underflow") {
+        CRxdScript script = BuildScript({OP_1, OP_RSHIFT});
+        REQUIRE(RunScript(script, false));
+    }
+}
+
 TEST_CASE("Script errors", "[rxd][vm]") {
     SECTION("Stack underflow") {
         CRxdScript script = BuildScript({OP_ADD});  // Needs 2 items
