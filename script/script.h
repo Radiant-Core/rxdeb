@@ -202,14 +202,83 @@ enum opcodetype
     OP_NOP9 = 0xb8,
     OP_NOP10 = 0xb9,
 
-    // Opcode added by BIP 342 (Tapscript)
-    OP_CHECKSIGADD = 0xba,
+    // More crypto (BCH-derived)
+    OP_CHECKDATASIG = 0xba,
+    OP_CHECKDATASIGVERIFY = 0xbb,
+
+    // Additional byte string operations
+    OP_REVERSEBYTES = 0xbc,
+
+    // ========================================
+    // RADIANT-SPECIFIC OPCODES
+    // ========================================
+
+    // State separator (0xBD-0xBF)
+    OP_STATESEPARATOR = 0xbd,
+    OP_STATESEPARATORINDEX_UTXO = 0xbe,
+    OP_STATESEPARATORINDEX_OUTPUT = 0xbf,
+
+    // Native introspection (0xC0-0xCD)
+    OP_INPUTINDEX = 0xc0,
+    OP_ACTIVEBYTECODE = 0xc1,
+    OP_TXVERSION = 0xc2,
+    OP_TXINPUTCOUNT = 0xc3,
+    OP_TXOUTPUTCOUNT = 0xc4,
+    OP_TXLOCKTIME = 0xc5,
+    OP_UTXOVALUE = 0xc6,
+    OP_UTXOBYTECODE = 0xc7,
+    OP_OUTPOINTTXHASH = 0xc8,
+    OP_OUTPOINTINDEX = 0xc9,
+    OP_INPUTBYTECODE = 0xca,
+    OP_INPUTSEQUENCENUMBER = 0xcb,
+    OP_OUTPUTVALUE = 0xcc,
+    OP_OUTPUTBYTECODE = 0xcd,
+
+    // Radiant crypto (0xCE-0xCF)
+    OP_SHA512_256 = 0xce,
+    OP_HASH512_256 = 0xcf,
+
+    // References (0xD0-0xED)
+    OP_PUSHINPUTREF = 0xd0,
+    OP_REQUIREINPUTREF = 0xd1,
+    OP_DISALLOWPUSHINPUTREF = 0xd2,
+    OP_DISALLOWPUSHINPUTREFSIBLING = 0xd3,
+    OP_REFHASHDATASUMMARY_UTXO = 0xd4,
+    OP_REFHASHVALUESUM_UTXOS = 0xd5,
+    OP_REFHASHDATASUMMARY_OUTPUT = 0xd6,
+    OP_REFHASHVALUESUM_OUTPUTS = 0xd7,
+    OP_PUSHINPUTREFSINGLETON = 0xd8,
+    OP_REFTYPE_UTXO = 0xd9,
+    OP_REFTYPE_OUTPUT = 0xda,
+    OP_REFVALUESUM_UTXOS = 0xdb,
+    OP_REFVALUESUM_OUTPUTS = 0xdc,
+    OP_REFOUTPUTCOUNT_UTXOS = 0xdd,
+    OP_REFOUTPUTCOUNT_OUTPUTS = 0xde,
+    OP_REFOUTPUTCOUNTZEROVALUED_UTXOS = 0xdf,
+    OP_REFOUTPUTCOUNTZEROVALUED_OUTPUTS = 0xe0,
+    OP_REFDATASUMMARY_UTXO = 0xe1,
+    OP_REFDATASUMMARY_OUTPUT = 0xe2,
+    OP_CODESCRIPTHASHVALUESUM_UTXOS = 0xe3,
+    OP_CODESCRIPTHASHVALUESUM_OUTPUTS = 0xe4,
+    OP_CODESCRIPTHASHOUTPUTCOUNT_UTXOS = 0xe5,
+    OP_CODESCRIPTHASHOUTPUTCOUNT_OUTPUTS = 0xe6,
+    OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_UTXOS = 0xe7,
+    OP_CODESCRIPTHASHZEROVALUEDOUTPUTCOUNT_OUTPUTS = 0xe8,
+    OP_CODESCRIPTBYTECODE_UTXO = 0xe9,
+    OP_CODESCRIPTBYTECODE_OUTPUT = 0xea,
+    OP_STATESCRIPTBYTECODE_UTXO = 0xeb,
+    OP_STATESCRIPTBYTECODE_OUTPUT = 0xec,
+    OP_PUSH_TX_STATE = 0xed,
+
+    // Glyph v2 dMint hash opcodes (Hard Fork V2)
+    OP_BLAKE3 = 0xee,
+    OP_K12 = 0xef,
 
     OP_INVALIDOPCODE = 0xff,
 };
 
 // Maximum value that an opcode can be
-static const unsigned int MAX_OPCODE = OP_NOP10;
+static const unsigned int MAX_OPCODE = OP_K12;
 
 std::string GetOpName(opcodetype opcode);
 

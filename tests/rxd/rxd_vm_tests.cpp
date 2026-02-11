@@ -85,6 +85,40 @@ TEST_CASE("Basic arithmetic operations", "[rxd][vm]") {
         CRxdScript script = BuildScript({OP_5, OP_NEGATE, OP_ABS, OP_5, OP_NUMEQUAL});
         REQUIRE(RunScript(script));
     }
+    
+    SECTION("OP_2MUL") {
+        // 5 * 2 = 10
+        CRxdScript script = BuildScript({OP_5, OP_2MUL, OP_10, OP_NUMEQUAL});
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_2DIV") {
+        // 10 / 2 = 5
+        CRxdScript script = BuildScript({OP_10, OP_2DIV, OP_5, OP_NUMEQUAL});
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_2DIV truncation") {
+        // 7 / 2 = 3 (truncates toward zero)
+        CRxdScript script = BuildScript({OP_7, OP_2DIV, OP_3, OP_NUMEQUAL});
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_2MUL then OP_2DIV round-trip") {
+        // 3 * 2 / 2 = 3
+        CRxdScript script = BuildScript({OP_3, OP_2MUL, OP_2DIV, OP_3, OP_NUMEQUAL});
+        REQUIRE(RunScript(script));
+    }
+    
+    SECTION("OP_2MUL stack underflow") {
+        CRxdScript script = BuildScript({OP_2MUL});
+        REQUIRE(RunScript(script, false));
+    }
+    
+    SECTION("OP_2DIV stack underflow") {
+        CRxdScript script = BuildScript({OP_2DIV});
+        REQUIRE(RunScript(script, false));
+    }
 }
 
 TEST_CASE("Stack operations", "[rxd][vm]") {

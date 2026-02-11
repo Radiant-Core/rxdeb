@@ -435,6 +435,24 @@ struct RxdVMAdapter::Impl {
                 }
                 break;
                 
+            case OP_2MUL:
+                if (stack.size() < 1) return ScriptError::INVALID_STACK_OPERATION;
+                {
+                    int64_t n = ScriptNumDeserialize(stack.back());
+                    stack.pop_back();
+                    stack.push_back(ScriptNumSerialize(n * 2));
+                }
+                break;
+                
+            case OP_2DIV:
+                if (stack.size() < 1) return ScriptError::INVALID_STACK_OPERATION;
+                {
+                    int64_t n = ScriptNumDeserialize(stack.back());
+                    stack.pop_back();
+                    stack.push_back(ScriptNumSerialize(n / 2));
+                }
+                break;
+                
             case OP_NEGATE:
                 if (stack.size() < 1) return ScriptError::INVALID_STACK_OPERATION;
                 {
