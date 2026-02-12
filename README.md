@@ -6,7 +6,8 @@ rxdeb allows you to step through Radiant scripts, inspect stack states, debug sm
 
 ## Features
 
-- **Full Radiant opcode support** - All 50+ Radiant-specific opcodes
+- **Full Radiant opcode support** - All 50+ Radiant-specific opcodes including V2 hard fork opcodes
+- **V2 Hard Fork opcodes** - OP_BLAKE3, OP_K12 hash execution; OP_LSHIFT, OP_RSHIFT bitwise shifts; OP_2MUL, OP_2DIV arithmetic
 - **Native introspection debugging** - Debug OP_INPUTINDEX, OP_TXVERSION, etc.
 - **Reference opcode debugging** - Step through OP_PUSHINPUTREF and related opcodes
 - **64-bit integer arithmetic** - Full support for Radiant's extended number range
@@ -177,7 +178,7 @@ Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 ## Related Projects
 
-- [Radiant-Core](https://github.com/radiantblockchain/radiant-node) - Full node
-- [RadiantScript](https://github.com/radiantblockchain/radiantscript) - Smart contract compiler
-- [radiantjs](https://github.com/radiantblockchain/radiantjs) - JavaScript SDK
-- [@radiantblockchain/constants](https://github.com/radiantblockchain/constants) - Shared constants
+- [Radiant-Core](https://github.com/Radiant-Core/Radiant-Core) - Full node
+- [RadiantScript](https://github.com/Radiant-Core/RadiantScript) - Smart contract compiler
+- [radiantjs](https://github.com/Radiant-Core/radiantjs) - JavaScript SDK
+- [@radiantblockchain/constants](https://github.com/Radiant-Core/radiantblockchain-constants) - Shared constants
