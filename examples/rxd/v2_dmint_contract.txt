@@ -1,0 +1,223 @@
+# V2 dMint Contract Walkthrough — OP_BLAKE3 Proof-of-Work
+#
+# This demonstrates a v2 decentralized mint (dMint) contract that uses
+# OP_BLAKE3 for on-chain proof-of-work validation. This is the key V2
+# hard fork feature that eliminates indexer trust dependency.
+#
+# V2 Hard Fork Opcodes Used:
+#   OP_BLAKE3 (0xee) — Blake3 hash for PoW validation
+#   OP_LSHIFT (0x98) — Bitwise left shift (for DAA arithmetic)
+#   OP_RSHIFT (0x99) — Bitwise right shift (for DAA arithmetic)
+#   OP_2MUL  (0x8d)  — Multiply by 2 (with overflow protection)
+#   OP_2DIV  (0x8e)  — Divide by 2 (truncation toward zero)
+#
+# Activation: Block 410,000 (mainnet & testnet3)
+# Gating: SCRIPT_ENHANCED_REFERENCES flag
+#
+# Usage:
+#   rxdeb --script-file=examples/rxd/v2_dmint_contract.txt
+#
+# For real debugging with allow-disabled-opcodes flag:
+#   rxdeb -z --script-file=examples/rxd/v2_dmint_contract.txt
+
+# ============================================
+# Section 1: OP_BLAKE3 Hash Verification
+#
+# The miner must provide a nonce such that:
+#   BLAKE3(preimage || nonce) < target
+#
+# This replaces the old indexer-validated PoW model.
+# ============================================
+
+# Push a mock preimage (contract state: height + refs)
+# In real contracts this is built from OP_INPUTINDEX, refs, etc.
+0x0100000000000000000000000000000000000000000000000000000000000000000000000000
+
+# Push a mock nonce (miner's solution)
+0xdeadbeefcafebabe
+
+# Concatenate preimage + nonce
+OP_CAT
+
+# Hash with OP_BLAKE3 — the V2 on-chain PoW hash
+OP_BLAKE3
+
+# The result is a 32-byte Blake3 hash on the stack.
+# In a real contract, this would be compared against the target:
+#   hash < target → valid PoW
+#
+# For this walkthrough, verify the output is 32 bytes:
+OP_SIZE
+0x20
+OP_NUMEQUAL
+OP_VERIFY
+
+# Clean up the hash value
+OP_DROP
+
+# ============================================
+# Section 2: OP_K12 Alternative
+#
+# Same pattern but using KangarooTwelve.
+# Contracts choose algorithm at deploy time.
+# ============================================
+
+# Push same preimage
+0x0100000000000000000000000000000000000000000000000000000000000000000000000000
+
+# Push nonce
+0xdeadbeefcafebabe
+
+OP_CAT
+
+# Hash with OP_K12 — alternative V2 PoW hash
+OP_K12
+
+# Verify 32-byte output
+OP_SIZE
+0x20
+OP_NUMEQUAL
+OP_VERIFY
+
+# Clean up
+OP_DROP
+
+# ============================================
+# Section 3: DAA Arithmetic with Shift Opcodes
+#
+# On-chain DAA (Difficulty Adjustment Algorithm) uses
+# OP_LSHIFT/OP_RSHIFT for power-of-2 scaling in ASERT-lite.
+#
+# ASERT adjustment: new_target = old_target << clamp(delta, -4, 4)
+# where delta = (actual_time - target_time) / half_life
+# ============================================
+
+# Push a difficulty target (8 bytes, little-endian)
+0x00e1f50500000000
+
+# Push shift amount: 3 (multiply target by 8 = easier)
+OP_3
+
+# Left shift: target << 3 (target * 8)
+OP_LSHIFT
+
+# Verify the shift worked: original * 8
+# 100000000 << 3 = 800000000
+0x00286bee00000000
+OP_NUMEQUAL
+OP_VERIFY
+
+# Now demonstrate right shift (difficulty increase)
+# Push a target
+0x00286bee00000000
+
+# Shift right by 2 (divide by 4 = harder)
+OP_2
+
+OP_RSHIFT
+
+# 800000000 >> 2 = 200000000
+0x00c2eb0b00000000
+OP_NUMEQUAL
+OP_VERIFY
+
+# ============================================
+# Section 4: OP_2MUL / OP_2DIV
+#
+# Quick multiply/divide by 2 for DAA calculations.
+# OP_2MUL has overflow protection (rejects if result > INT64_MAX).
+# OP_2DIV truncates toward zero (like C++ integer division).
+# ============================================
+
+# Push 500
+0xf401
+
+# OP_2MUL → 1000
+OP_2MUL
+
+0xe803
+OP_NUMEQUAL
+OP_VERIFY
+
+# Push 7
+OP_7
+
+# OP_2DIV → 3 (truncation: 7/2 = 3.5 → 3)
+OP_2DIV
+
+OP_3
+OP_NUMEQUAL
+OP_VERIFY
+
+# Negative truncation: OP_2DIV(-3) == -1 (toward zero, not floor)
+0x0380
+OP_2DIV
+0x0180
+OP_NUMEQUAL
+OP_VERIFY
+
+# ============================================
+# Section 5: Combined V2 Contract Pattern
+#
+# A simplified v2 dMint contract flow:
+# 1. Build preimage from contract state
+# 2. Hash with selected algorithm (OP_BLAKE3)
+# 3. Compare hash against target
+# 4. Verify contract integrity
+#
+# This is the core of what makes v2 dMint trustless:
+# all PoW validation happens in consensus, not the indexer.
+# ============================================
+
+# Simulate: push a hash result (32 bytes, starts with zeros = "valid")
+0x0000000000000000111111111111111122222222222222223333333333333333
+
+# Push target (32 bytes, larger = easier)
+0x000000000000ffff111111111111111122222222222222223333333333333333
+
+# The PoW check: hash must be numerically less than target
+# In script, we compare as little-endian byte arrays.
+# For this demo, we just verify both are 32 bytes and succeed.
+OP_SIZE
+0x20
+OP_NUMEQUAL
+OP_VERIFY
+
+OP_SIZE
+0x20
+OP_NUMEQUAL
+OP_VERIFY
+
+# Clean up
+OP_2DROP
+
+# ============================================
+# Final: All V2 opcode tests passed!
+# ============================================
+
+OP_TRUE
+
+# ============================================
+# Expected Execution Summary:
+#
+# This walkthrough exercises all 6 V2 opcodes:
+#   OP_BLAKE3  — Blake3 hash (Section 1)
+#   OP_K12     — KangarooTwelve hash (Section 2)
+#   OP_LSHIFT  — Left bit shift (Section 3)
+#   OP_RSHIFT  — Right bit shift (Section 3)
+#   OP_2MUL    — Multiply by 2 (Section 4)
+#   OP_2DIV    — Divide by 2 (Section 4)
+#
+# Real v2 dMint Contract Bytecode Structure:
+#   Part A: 5175c0c855797ea8597959797ea87e5a7a7e (preimage)
+#   PoW Op: ee (OP_BLAKE3) or ef (OP_K12) or aa (OP_HASH256)
+#   Part B: bc01147f77587f04...75686d7551 (target compare + verify)
+#
+# The key insight: by moving PoW validation into consensus opcodes,
+# the indexer no longer needs to be trusted for dMint security.
+# This eliminates griefing attacks where invalid PoW could consume
+# contract state in the old v1 model.
+#
+# Reference: Glyph v2 Whitepaper §11.2, Appendix E
+# Activation: Block 410,000 (SCRIPT_ENHANCED_REFERENCES)
+# ============================================
