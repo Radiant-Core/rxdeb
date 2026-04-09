@@ -83,17 +83,35 @@ Shows the complete V2 dMint flow: preimage → hash → target comparison.
 The actual V2 dMint contract bytecode has three parts:
 
 ```
-Part A (preimage building):
-  5175c0c855797ea8597959797ea87e5a7a7e
+Part A (preimage building) — 10-state-item V2 contract:
+  5175c8 59 79 7e a8 5d 79 5d 79 7e a8 7e 5e 7a 7e
+
+  Opcode breakdown:
+    51 75       OP_1 OP_DROP          (v1 padding)
+    c8          OP_OUTPOINTTXHASH     (push txHash — consumed by first OP_CAT)
+    59 79       OP_9 OP_PICK          (contractRefPickIndex = stateItemCount-1 = 9)
+    7e a8       OP_CAT OP_SHA256      (sha256(txHash || contractRef))
+    5d 79       OP_13 OP_PICK         (inputHash)
+    5d 79       OP_13 OP_PICK         (outputHash)
+    7e a8 7e    OP_CAT OP_SHA256 OP_CAT
+    5e 7a 7e    OP_14 OP_ROLL OP_CAT  (nonce → preimage complete)
 
 PoW hash opcode (per algorithm):
   aa = OP_HASH256 (SHA256d)
   ee = OP_BLAKE3
   ef = OP_K12
 
-Part B (target comparison + contract integrity):
+Part B (target comparison + DAA + contract integrity):
   bc01147f77587f04...75686d7551
 ```
+
+> **IMPORTANT — c0 removal:** The previously-documented bytecode `5175c0c8...` included
+> `OP_INPUTINDEX` (0xc0) before `OP_OUTPOINTTXHASH` (0xc8). This was a bug — `inputIndex`
+> was pushed but never consumed, shifting every subsequent PICK/ROLL off by one and causing
+> B.2's `OP_1 PICK` to read `inputIndex` instead of `target`. All mined transactions failed.
+>
+> The correct V2 Part A starts with `5175c8` (no `c0`). Any contract with `5175c0c8`
+> bytecode is broken and cannot be mined — it must be redeployed.
 
 **Note:** The `aa` bytes in Part B are `OP_HASH256` for contract integrity checks, NOT the PoW hash. They remain unchanged regardless of the selected mining algorithm.
 
