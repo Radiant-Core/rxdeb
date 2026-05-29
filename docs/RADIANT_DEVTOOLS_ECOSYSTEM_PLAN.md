@@ -331,7 +331,7 @@ const contract = new Contract(artifact);
 #### 3.3.3 Package Structure Proposal
 
 ```
-@radiantblockchain/radiantjs (meta-package)
+@radiant-core/radiantjs (meta-package)
 ├── @radiantblockchain/core        # Primitives, crypto
 ├── @radiantblockchain/script      # Script, opcodes
 ├── @radiantblockchain/transaction # Transaction building
